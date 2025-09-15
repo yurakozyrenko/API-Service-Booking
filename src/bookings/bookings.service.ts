@@ -1,26 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateBookingDto } from './dto/create-booking.dto';
-import { UpdateBookingDto } from './dto/update-booking.dto';
+import { BookingsRepository } from './booking.repository';
+import { Booking } from './entities/booking.entity';
 
 @Injectable()
 export class BookingsService {
-  create(createBookingDto: CreateBookingDto) {
-    return 'This action adds a new booking';
+  private readonly logger = new Logger(BookingsService.name);
+  constructor(private bookingsRepository: BookingsRepository) {}
+
+  async create(createBookingDto: CreateBookingDto) {
+    const { raw } = await this.bookingsRepository.createBooking(createBookingDto);
+
+    this.logger.debug(`admin successfully created with id: ${raw[0].id}`);
   }
 
-  findAll() {
-    return `This action returns all bookings`;
-  }
+  async findOne(id: Booking['id']): Promise<Booking> {
+    const booking = await this.bookingsRepository.findOneById(id);
 
-  findOne(id: number) {
-    return `This action returns a #${id} booking`;
-  }
+    if (!booking) {
+      this.logger.error(`booking with id: ${id} not found`);
+      throw new HttpException(`booking with id: ${id} not found`, HttpStatus.NOT_FOUND);
+    }
 
-  update(id: number, updateBookingDto: UpdateBookingDto) {
-    return `This action updates a #${id} booking`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} booking`;
+    return booking;
   }
 }
