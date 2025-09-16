@@ -3,7 +3,6 @@ import { BookingsModule } from './bookings/bookings.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import config from './configuration/config';
-import { KafkaModule } from './kafka/kafka.module';
 
 @Module({
   imports: [
@@ -16,7 +15,6 @@ import { KafkaModule } from './kafka/kafka.module';
       inject: [ConfigService],
     }),
     BookingsModule,
-    KafkaModule,
   ],
   providers: [],
 })

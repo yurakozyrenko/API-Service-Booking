@@ -1,27 +1,48 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { CreateBookingDto } from './dto/create-booking.dto';
-import { BookingsRepository } from './booking.repository';
+import { Inject, Injectable } from '@nestjs/common';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Booking } from './entities/booking.entity';
+import { CreateBookingDto } from './dto/create-booking.dto';
+import { ClientKafka } from '@nestjs/microservices';
+import { BookingStatus } from 'src/constants/constants';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class BookingsService {
-  private readonly logger = new Logger(BookingsService.name);
-  constructor(private bookingsRepository: BookingsRepository) {}
+  constructor(
+    @InjectRepository(Booking)
+    private readonly repo: Repository<Booking>,
 
-  async create(createBookingDto: CreateBookingDto) {
-    const { raw } = await this.bookingsRepository.createBooking(createBookingDto);
+    @Inject('KAFKA_PRODUCER')
+    private readonly kafkaClient: ClientKafka,
+  ) {}
 
-    this.logger.debug(`admin successfully created with id: ${raw[0].id}`);
+  async create(dto: CreateBookingDto): Promise<Booking> {
+    const b = this.repo.create({
+      restaurantId: dto.restaurantId,
+      startTime: new Date(dto.startTime),
+      endTime: new Date(dto.endTime),
+      guests: dto.guests,
+      status: BookingStatus.CREATED,
+    });
+    const saved = await this.repo.save(b);
+
+    await lastValueFrom(
+      this.kafkaClient.emit('booking.created', {
+        bookingId: saved.id,
+        restaurantId: saved.restaurantId,
+        startTime: saved.startTime.toISOString(),
+        endTime: saved.endTime.toISOString(),
+        guests: saved.guests,
+        status: 'CREATED', 
+        timestamp: new Date().toISOString(), 
+      }),
+    );
+
+    return saved;
   }
 
-  async findOne(id: Booking['id']): Promise<Booking> {
-    const booking = await this.bookingsRepository.findOneById(id);
-
-    if (!booking) {
-      this.logger.error(`booking with id: ${id} not found`);
-      throw new HttpException(`booking with id: ${id} not found`, HttpStatus.NOT_FOUND);
-    }
-
-    return booking;
+  async findOne(id: string): Promise<Booking | null> {
+    return this.repo.findOne({ where: { id } });
   }
 }

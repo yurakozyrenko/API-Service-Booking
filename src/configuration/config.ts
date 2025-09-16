@@ -5,6 +5,7 @@ dotenv.config();
 
 const {
   HTTP_PORT,
+  LOG_LEVEL,
   DB_TYPE,
   DB_HOST,
   DB_PORT,
@@ -12,15 +13,13 @@ const {
   DB_PASSWORD,
   DB_DATABASE,
   KAFKA_EVENTS_BROKERS,
-  INCOMING_MESSAGE,
-  OUTGOING_MESSAGE,
   GROUP_ID,
 } = process.env;
 
 export default (): any =>
   ({
-    API_PREFIX: '/api',
-    API_VERSION: '/v1',
+    HTTP_PORT: Number(HTTP_PORT) || 8000,
+    LOG_LEVEL: LOG_LEVEL,
     POSTGRES_DB_SETTINGS: {
       type: DB_TYPE,
       host: DB_HOST,
@@ -30,22 +29,11 @@ export default (): any =>
       database: DB_DATABASE,
       autoLoadEntities: true,
       namingStrategy: new SnakeNamingStrategy(),
-    },
-
-    KAFKA: {
-      brokers: KAFKA_EVENTS_BROKERS.split(','),
-      // ssl: { rejectUnauthorized: false },
-      // sasl: {
-      //   mechanism: 'plain',
-      //   username: process.env.KAFKA_SASL_USERNAME,
-      //   password: process.env.KAFKA_SASL_PASSWORD,
-      // },
-    },
-    KAFKA_TOPICS: {
-      INCOMING_MESSAGE: INCOMING_MESSAGE,
-      OUTGOING_MESSAGE: OUTGOING_MESSAGE,
-    },
-    GROUP_ID: {
-      GROUP_ID: GROUP_ID,
+      KAFKA: {
+        brokers: (KAFKA_EVENTS_BROKERS || 'localhost:9092').split(','),
+      },
+      GROUP_ID: {
+        GROUP_ID: GROUP_ID,
+      },
     },
   }) as const;
