@@ -18,6 +18,8 @@ const {
 
 export default (): any =>
   ({
+    API_PREFIX: '/api',
+    API_VERSION: '/v1',
     HTTP_PORT: Number(HTTP_PORT) || 8000,
     LOG_LEVEL: LOG_LEVEL,
     POSTGRES_DB_SETTINGS: {
