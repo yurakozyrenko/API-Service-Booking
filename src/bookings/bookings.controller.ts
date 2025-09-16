@@ -8,11 +8,11 @@ export class BookingsController {
 
   @Post()
   create(@Body() createBookingDto: CreateBookingDto) {
-    return this.bookingsService.create(createBookingDto);
+    return this.bookingsService.createBooking(createBookingDto);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.bookingsService.findOne(id);
+    return this.bookingsService.findOneBooking(id);
   }
 }
